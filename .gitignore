@@ -16,3 +16,6 @@ env/
 # ログファイル
 *.log
 logs/
+
+# Mac関連
+.DS_Store
