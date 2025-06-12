@@ -7,21 +7,36 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
 
-def generate_wordcloud(df_text):
+def extract_nouns(text, tokenizer):
+    # 文章から名詞を抽出
+    tokens = tokenizer.tokenize(text)
+    nouns = [token.base_form for token in tokens if token.part_of_speech.startswith('名詞')]
+    return ' '.join(nouns)
+
+
+def extract_top_keywords(df_text, top_n=200):
+    # 名詞の抽出
     tokenizer = Tokenizer()
+    nouns = df_text.apply(lambda x: extract_nouns(x, tokenizer))
 
     # TF-IDFによるベクトル化
-    nouns = df_text.apply(lambda x: extract_nouns(x, tokenizer))
     vectorizer = TfidfVectorizer(stop_words=['こと', 'ため', 'よう', 'もの', 'これ', 'それ', 'どこ', 'そこ', 'たい', 'ほか', 'さっき', 'びと'])
     X = vectorizer.fit_transform(nouns)
     df_vectorized = pd.DataFrame(X.toarray(), columns=vectorizer.get_feature_names_out())
 
     # 上位のキーワードを抽出
-    top_keywords = df_vectorized.sum().nlargest(200)
+    top_keywords = df_vectorized.sum().nlargest(top_n)
+
+    return top_keywords
+
+
+def generate_wordcloud(df_text):
+    # 上位のキーワードを抽出
+    top_keywords = extract_top_keywords(df_text)
 
     # ワードクラウドの作成
     wordcloud = WordCloud(
-        font_path='/System/Library/Fonts/ヒラギノ丸ゴ ProN W4.ttc',
+        font_path='C:\\Windows\\Fonts\\meiryo.ttc',
         width=800,
         height=400,
         background_color='white',
@@ -31,12 +46,6 @@ def generate_wordcloud(df_text):
     ).generate_from_frequencies(top_keywords)
 
     return wordcloud
-
-
-def extract_nouns(text, tokenizer):
-    tokens = tokenizer.tokenize(text)
-    nouns = [token.base_form for token in tokens if token.part_of_speech.startswith('名詞')]
-    return ' '.join(nouns)
 
 
 def main():
